@@ -1,9 +1,8 @@
 <?php
 
-  $max_count = 0;
-  $max_filename = "";
-  $arr = array();
-  $directory = '/home/linda/Linda/dropsuite-test/example-dir';
+$max_count = 0;
+$max_filename = "";
+$arr = array();
 
   function checkMax($filename) {
     global $arr, $max_count, $max_filename;
@@ -40,9 +39,19 @@
     }
   }
 
-  $start_time = microtime(true);
-  iterateDir($directory);
-  print_r("\n" . file_get_contents($max_filename) . ' ' . $max_count . "\n\n");
-  $end_time = microtime(true);
-  print_r("Execution time of script = ".($end_time - $start_time)." sec\n\n");
+  function main() {
+    global $argc, $argv, $max_filename, $max_count;
+    if ($argc != 2) {
+      exit;
+    }
+
+    $start_time = microtime(true);
+    iterateDir($argv[1]);
+    print_r("\n" . file_get_contents($max_filename) . ' ' . $max_count . "\n\n");
+    $end_time = microtime(true);
+    print_r("Execution time of script = ".($end_time - $start_time)." sec\n\n");
+  }
+
+main();
+
 ?>
