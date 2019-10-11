@@ -1,10 +1,11 @@
 <?php
-class ScannerDuplicate {
+class ScannerDuplicate{
 
   private $_debug = false;
   private $_arr = array();
   private $_maxCount = 0;
   private $_maxFilename = "";
+  private $_nCore = 4;
 
   public function __construct($_debug) {
     $this->_debug = $_debug;
@@ -32,7 +33,11 @@ class ScannerDuplicate {
     }
   }
 
-  private function hashFilePartial($filename) { //option 1
+  private function _hashFileFull($filename) { //option 1
+    return hash_file('sha256', $filename);
+  }
+
+  private function _hashFilePartial($filename) { //option 2
     $handle = fopen($filename, 'r');
     $hash = hash_init('sha256');
     while (!feof($handle)) {
@@ -43,18 +48,14 @@ class ScannerDuplicate {
     return hash_final($hash);
   }
 
-  private function _hashFileFull($filename) { //option 2
-    return hash_file('sha256', $filename);
-  }
-
-  private function _hashFileExecNative($filename) {
+  private function _hashFileExecNative($filename) { //option 3
     return substr(exec('sha256sum ' . $filename), 0, 64);
   }
 
   private function _checkMax($filename) {
-    $hash = $this->_hashFileFull($filename);
-    // $hash = _hashFilePartial($filename);
-    // $hash = _hashFileExecNative($filename);
+    // $hash = $this->_hashFileFull($filename);
+    // $hash = $this->_hashFilePartial($filename);
+    $hash = $this->_hashFileExecNative($filename);
 
     $this->printDebugMessage($filename."\n");
     $this->printDebugMessage($hash."\n\n");
