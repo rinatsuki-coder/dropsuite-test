@@ -1,4 +1,6 @@
 <?php
+include_once "MySqlite.php";
+
 class ScannerDuplicate{
 
   private $_debug = false;
@@ -6,9 +8,17 @@ class ScannerDuplicate{
   private $_maxCount = 0;
   private $_maxFilename = "";
   private $_nCore = 4;
+  private $_db;
+  private $_usingDB = false;
 
-  public function __construct($_debug) {
-    $this->_debug = $_debug;
+  public function __construct($debug, $usingDB) {
+    $this->_debug = $debug;
+    $this->_usingDB = $usingDB;
+
+    //Create database and default table
+    if ($usingDB){
+      $this->_db = new MySqlite();
+    }
   }
 
   public function getMaxCount() {
@@ -52,10 +62,34 @@ class ScannerDuplicate{
     return substr(exec('sha256sum ' . $filename), 0, 64);
   }
 
-  private function _checkMax($filename) {
-    // $hash = $this->_hashFileFull($filename);
+  private function _checkMaxDB($filename) {
+    $hash = $this->_hashFileFull($filename);
     // $hash = $this->_hashFilePartial($filename);
-    $hash = $this->_hashFileExecNative($filename);
+    // $hash = $this->_hashFileExecNative($filename);
+
+    $this->printDebugMessage($filename."\n");
+    $this->printDebugMessage($hash."\n\n");
+
+    $result = $this->_db->getById($hash);
+    if ($result['count'] > 0){
+      $this->_db->update($hash, $result['count'] + 1);
+      if ($this->_maxCount < $result['count'] + 1) {
+        $this->_maxCount = $result['count'] + 1;
+        $this->_maxFilename = $filename;
+      }
+    } else {
+      $this->_db->insert($hash, 1);
+      if (empty($this->_maxFilename)) {
+        $this->_maxCount = 1;
+        $this->_maxFilename = $filename;
+      }
+    }
+  }
+
+  function _checkMax($filename) {
+    $hash = $this->_hashFileFull($filename);
+    // $hash = $this->_hashFilePartial($filename);
+    // $hash = $this->_hashFileExecNative($filename);
 
     $this->printDebugMessage($filename."\n");
     $this->printDebugMessage($hash."\n\n");
@@ -77,7 +111,11 @@ class ScannerDuplicate{
 
   public function scanDuplicateContent ($dir) {
     if (is_file($dir)) {
-      $this->_checkMax($dir);
+      if ($this->_usingDB) {
+        $this->_checkMaxDB($dir);
+      } else {
+        $this->_checkMax($dir);
+      }
     } elseif (is_dir($dir)) {
       $subdir = scandir($dir);
       foreach ($subdir as $key => $value) {
@@ -86,6 +124,11 @@ class ScannerDuplicate{
         }
       }
     }
+  }
+
+  public function clearCount() {
+    $this->_db->dropTable();
+    $this->_db->close();
   }
 }
 
