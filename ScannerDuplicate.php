@@ -53,9 +53,9 @@ class ScannerDuplicate{
   }
 
   private function _checkMax($filename) {
-    // $hash = $this->_hashFileFull($filename);
+    $hash = $this->_hashFileFull($filename);
     // $hash = $this->_hashFilePartial($filename);
-    $hash = $this->_hashFileExecNative($filename);
+    // $hash = $this->_hashFileExecNative($filename);
 
     $this->printDebugMessage($filename."\n");
     $this->printDebugMessage($hash."\n\n");
